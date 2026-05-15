@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iRR6 Calculator — Intermediate-1 MF Risk Stratification</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface2: #f0f3f7;
+  --border: #dce2ec;
+  --border-strong: #b8c4d8;
+  --accent: #1a3f7a;
+  --accent-light: #e8eef8;
+  --accent-mid: #2e5faa;
+  --text: #1a2030;
+  --muted: #6b7a96;
+  --low: #1a7a4a;
+  --low-bg: #eaf5ef;
+  --low-border: #a8d9bc;
+  --intermediate: #8a5a00;
+  --intermediate-bg: #fdf3e3;
+  --intermediate-border: #f0c870;
+  --high: #8a1a1a;
+  --high-bg: #fdeaea;
+  --high-border: #f0a0a0;
+  --shadow: 0 2px 12px rgba(26,63,122,0.07);
+  --shadow-lg: 0 4px 24px rgba(26,63,122,0.11);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  font-size: 15px;
+}
+.page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+/* HEADER */
+header {
+  background: var(--accent);
+  padding: 0 20px;
+}
+.header-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 36px 0 32px;
+}
+.header-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-eyebrow::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: rgba(255,255,255,0.35);
+}
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.header-title .light { font-weight: 600; color: rgba(255,255,255,0.72); }
+.header-sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.62;
+  max-width: 520px;
+  margin-bottom: 18px;
+}
+.header-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 0.775rem;
+  color: rgba(255,255,255,0.72);
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.header-ref:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.card-step {
+  background: var(--accent);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.card-body { padding: 22px 24px; }
+
+/* ELIGIBILITY */
+.elig-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 540px) { .elig-grid { grid-template-columns: 1fr; } }
+
+.elig-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 15px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.elig-item:hover { border-color: var(--border-strong); background: var(--surface2); }
+.elig-item.checked { border-color: var(--accent); background: var(--accent-light); }
+
+.elig-checkbox {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  transition: all 0.15s;
+  pointer-events: none;
+}
+.elig-item.checked .elig-checkbox { background: var(--accent); border-color: var(--accent); }
+.elig-checkbox svg { opacity: 0; transition: opacity 0.15s; }
+.elig-item.checked .elig-checkbox svg { opacity: 1; }
+
+.elig-text { flex: 1; pointer-events: none; }
+.elig-main { font-size: 0.855rem; font-weight: 500; color: var(--text); line-height: 1.3; }
+.elig-sub  { font-size: 0.755rem; color: var(--muted); margin-top: 2px; font-style: italic; }
+
+.elig-warning {
+  display: none;
+  margin-top: 14px;
+  padding: 11px 15px;
+  background: #fff8e6;
+  border: 1px solid #f0c870;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  color: #7a5000;
+  line-height: 1.5;
+}
+
+/* VARIABLE ROWS */
+.var-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.var-row:first-child { padding-top: 0; }
+.var-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+.var-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+.var-detail {
+  font-size: 0.785rem;
+  color: var(--muted);
+  line-height: 1.57;
+  margin-bottom: 6px;
+}
+.var-evidence {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 9px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.var-points-note {
+  font-size: 0.76rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.var-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.toggle-grp {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--surface2);
+}
+.t-btn {
+  padding: 7px 15px;
+  background: transparent;
+  border: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.t-btn + .t-btn { border-left: 1px solid var(--border); }
+.t-btn.sel-no  { background: #fff; color: var(--text); }
+.t-btn.sel-yes { background: var(--accent); color: #fff; }
+
+.pts-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.pts-tag.on { background: var(--accent-light); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+
+/* RBC sub */
+.rbc-sub {
+  display: none;
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  flex-direction: column;
+  gap: 8px;
+}
+.rbc-sub.open { display: flex; }
+.sub-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.radio-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+}
+.radio-opt:hover { border-color: var(--border-strong); }
+.radio-opt.sel   { border-color: var(--accent); background: var(--accent-light); }
+
+.radio-circle {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+.radio-opt.sel .radio-circle { border-color: var(--accent); }
+.radio-circle::after {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.radio-opt.sel .radio-circle::after { opacity: 1; }
+.radio-text { font-size: 0.81rem; color: var(--text); flex: 1; line-height: 1.4; }
+.radio-pts-tag { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--accent); font-weight: 500; flex-shrink: 0; }
+
+/* CALC BTN */
+.calc-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(26,63,122,0.22);
+}
+.calc-btn:hover { background: var(--accent-mid); }
+
+/* RESULT */
+#result { display: none; margin-top: 20px; }
+#result.show { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-card {
+  background: var(--surface);
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.result-card.low          { border-color: var(--low-border); }
+.result-card.intermediate { border-color: var(--intermediate-border); }
+.result-card.high         { border-color: var(--high-border); }
+
+.result-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 480px) { .result-top { grid-template-columns: 1fr; } }
+
+.result-box { padding: 24px 28px; }
+.result-box + .result-box { border-left: 1px solid var(--border); }
+@media (max-width: 480px) { .result-box + .result-box { border-left: none; border-top: 1px solid var(--border); } }
+
+.result-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.result-score {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.result-risk {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.result-risk.low          { color: var(--low); }
+.result-risk.intermediate { color: var(--intermediate); }
+.result-risk.high         { color: var(--high); }
+.result-os-note { font-size: 0.78rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+.result-body { padding: 24px 28px; }
+
+/* Survival bars */
+.surv-section { margin-bottom: 24px; }
+.surv-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.bar-row:last-child { margin-bottom: 0; }
+.bar-cat {
+  font-size: 0.775rem;
+  color: var(--muted);
+  width: 115px;
+  flex-shrink: 0;
+}
+.bar-row.active .bar-cat { color: var(--text); font-weight: 600; }
+.bar-track {
+  flex: 1;
+  height: 9px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.9s cubic-bezier(0.4,0,0.2,1);
+  width: 0;
+}
+.bar-fill.low          { background: var(--low); }
+.bar-fill.intermediate { background: var(--intermediate); }
+.bar-fill.high         { background: var(--high); }
+.bar-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.775rem;
+  color: var(--muted);
+  width: 44px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.bar-row.active .bar-val { color: var(--text); font-weight: 500; }
+
+.val-note {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 9px 13px;
+  font-size: 0.765rem;
+  color: var(--muted);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* Breakdown */
+.breakdown-section { margin-bottom: 22px; }
+.breakdown-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.breakdown-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.breakdown-table tr:last-child td { border-bottom: none; }
+.breakdown-table tr.active-row td { background: var(--accent-light); }
+.breakdown-table tr.total-row td {
+  border-top: 1.5px solid var(--border-strong);
+  font-weight: 600;
+  background: var(--surface2);
+}
+.breakdown-table .pts-col {
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  width: 60px;
+}
+.breakdown-table tr.active-row .pts-col { color: var(--accent); }
+
+/* Interpretation */
+.interp {
+  padding: 15px 18px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  line-height: 1.7;
+  border-left: 3px solid;
+}
+.interp.low          { background: var(--low-bg); border-color: var(--low); color: #0f3d26; }
+.interp.intermediate { background: var(--intermediate-bg); border-color: var(--intermediate); color: #5a3800; }
+.interp.high         { background: var(--high-bg); border-color: var(--high); color: #5a0f0f; }
+.interp strong { font-weight: 600; }
+
+.reset-btn {
+  display: block;
+  margin: 18px auto 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 9px 22px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  transition: border-color 0.2s, color 0.2s;
+}
+.reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* DISCLAIMER */
+.disclaimer {
+  margin-top: 28px;
+  padding: 16px 20px;
+  background: #fffdf0;
+  border: 1px solid #e8d88a;
+  border-radius: 6px;
+  font-size: 0.765rem;
+  color: #6b5a00;
+  line-height: 1.65;
+}
+.disclaimer strong { color: #4a3e00; }
+
+/* FOOTER */
+footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-ref { font-size: 0.74rem; color: var(--muted); line-height: 1.6; max-width: 500px; }
+.footer-ref strong { color: var(--text); }
+.footer-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.1em; color: var(--muted); text-align: right; line-height: 1.8; }
+
+@media (max-width: 480px) {
+  .var-row { grid-template-columns: 1fr; }
+  .var-controls { align-items: flex-start; }
+  .card-body { padding: 18px 16px; }
+  .result-body { padding: 18px 16px; }
+  .result-box { padding: 18px 16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-eyebrow">Myeloproliferative Neoplasms · Prognostic Tool</div>
+    <h1 class="header-title">iRR6 Score Calculator<br><span class="light">Intermediate-1 Risk Myelofibrosis</span></h1>
+    <p class="header-sub">
+      Dynamic risk stratification for patients with Intermediate-1 DIPSS/MYSEC-PM myelofibrosis on ruxolitinib. Evaluates treatment response parameters at 6 months to identify candidates for early therapeutic shift.
+    </p>
+    <a class="header-ref" href="https://doi.org/10.1002/cncr.70062" target="_blank" rel="noopener">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Palandri F. et al. — Cancer 2025 · doi:10.1002/cncr.70062
+    </a>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- STEP 1 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-step">1</div>
+      <div class="card-title">Confirm Inclusion Criteria</div>
+    </div>
+    <div class="card-body">
+      <div class="elig-grid">
+
+        <div class="elig-item" id="e0">
+          <div class="elig-checkbox">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 3.5 6.5 9 1"/></svg>
+          </div>
+          <div class="elig-text">
+            <div class="elig-main">Intermediate-1 risk MF confirmed</div>
+            <div class="elig-sub">DIPSS (PMF) or MYSEC-PM (PPV/PET-MF) at ruxolitinib start</div>
+          </div>
+        </div>
+
+        <div class="elig-item" id="e1">
+          <div class="elig-checkbox">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 3.5 6.5 9 1"/></svg>
+          </div>
+          <div class="elig-text">
+            <div class="elig-main">Ruxolitinib ≥ 6 months</div>
+            <div class="elig-sub">Outside clinical trials, with CBC and spleen data at baseline, 3 and 6 months</div>
+          </div>
+        </div>
+
+        <div class="elig-item" id="e2">
+          <div class="elig-checkbox">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 3.5 6.5 9 1"/></svg>
+          </div>
+          <div class="elig-text">
+            <div class="elig-main">Platelet count &gt;50 ×10⁹/L at baseline</div>
+            <div class="elig-sub">At initiation of ruxolitinib</div>
+          </div>
+        </div>
+
+        <div class="elig-item" id="e3">
+          <div class="elig-checkbox">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 3.5 6.5 9 1"/></svg>
+          </div>
+          <div class="elig-text">
+            <div class="elig-main">Palpable spleen ≥ 5 cm BCM at baseline</div>
+            <div class="elig-sub">Below costal margin at ruxolitinib start</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="elig-warning" id="elig-warn">
+        ⚠ The iRR6 model was validated exclusively in INT-1 risk patients fulfilling all four inclusion criteria. Results in patients not meeting these criteria are outside the model's validated scope.
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-step">2</div>
+      <div class="card-title">Score Variables — Response Assessed at 6 Months</div>
+    </div>
+    <div class="card-body">
+
+      <!-- V1 -->
+      <div class="var-row">
+        <div class="var-info">
+          <div class="var-name">Ruxolitinib underdosing relative to platelet count</div>
+          <div class="var-detail">
+            Dose lower than prescribing indication based on PLT count at <em>any</em> time point (baseline, 3 months, or 6 months). Variable with highest prognostic impact. Underdosing is often driven by anemia concerns; however, dose relative to PLT count — not absolute dose — carries prognostic significance.
+          </div>
+          <div class="var-evidence">HR 3.91 (95% CI 2.61–5.85) · p &lt;0.001</div>
+          <div class="var-points-note">If present → +2.0 points</div>
+        </div>
+        <div class="var-controls">
+          <div class="toggle-grp">
+            <button class="t-btn sel-no" id="ud-no"  onclick="setVar('underdose',false)">Absent</button>
+            <button class="t-btn"        id="ud-yes" onclick="setVar('underdose',true)">Present</button>
+          </div>
+          <div class="pts-tag" id="ud-tag">+0 pts</div>
+        </div>
+      </div>
+
+      <!-- V2 -->
+      <div class="var-row">
+        <div class="var-info">
+          <div class="var-name">Absence of spleen reduction ≥50% at 6 months (no SR50)</div>
+          <div class="var-detail">
+            No ≥50% reduction in palpable spleen length from baseline at month 6. Includes: no SR50 at months 3 and 6; or SR50 achieved at month 3 but lost at month 6. Note: SR30 threshold (used in original RR6) loses prognostic value specifically in INT-1 patients, who respond better to ruxolitinib; SR50 is the appropriate cutoff in this subgroup.
+          </div>
+          <div class="var-evidence">HR 1.45 (95% CI 1.06–1.99) · p = 0.02</div>
+          <div class="var-points-note">If SR50 absent → +1.5 points</div>
+        </div>
+        <div class="var-controls">
+          <div class="toggle-grp">
+            <button class="t-btn sel-no" id="sr-no"  onclick="setVar('sr50',false)">SR50 achieved</button>
+            <button class="t-btn"        id="sr-yes" onclick="setVar('sr50',true)">SR50 absent</button>
+          </div>
+          <div class="pts-tag" id="sr-tag">+0 pts</div>
+        </div>
+      </div>
+
+      <!-- V3 -->
+      <div class="var-row">
+        <div class="var-info">
+          <div class="var-name">RBC transfusion requirement</div>
+          <div class="var-detail">
+            Need for red blood cell transfusions at multiple time points (baseline, 3 months, 6 months). Marker of persistent bone marrow failure and anemia severity; independent predictor of OS in multivariable analysis.
+          </div>
+          <div class="var-evidence">All time points: HR 1.85 (95% CI 1.16–2.94) · p = 0.01</div>
+          <div class="var-points-note">2 time points → +1.0 pt &nbsp;|&nbsp; All 3 time points → +1.5 pts</div>
+        </div>
+        <div class="var-controls">
+          <div class="toggle-grp">
+            <button class="t-btn sel-no" id="rbc-no"  onclick="setRBCMain(false)">No</button>
+            <button class="t-btn"        id="rbc-yes" onclick="setRBCMain(true)">Yes</button>
+          </div>
+          <div class="pts-tag" id="rbc-tag">+0 pts</div>
+        </div>
+      </div>
+
+      <!-- RBC sub-options -->
+      <div class="rbc-sub" id="rbc-sub">
+        <div class="sub-label">Specify transfusion burden</div>
+        <div class="radio-opt" id="rbc-2tp" onclick="setRBCDetail('two')">
+          <div class="radio-circle"></div>
+          <div class="radio-text">Requirement at <strong>2 time points</strong> (e.g., baseline + 3 months, or 3 + 6 months)</div>
+          <div class="radio-pts-tag">+1.0 pt</div>
+        </div>
+        <div class="radio-opt" id="rbc-all" onclick="setRBCDetail('all')">
+          <div class="radio-circle"></div>
+          <div class="radio-text">Requirement at <strong>all 3 time points</strong> (baseline, 3 months, and 6 months)</div>
+          <div class="radio-pts-tag">+1.5 pts</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">Calculate iRR6 Score →</button>
+
+  <!-- RESULT -->
+  <div id="result">
+    <div class="result-card" id="result-card">
+
+      <div class="result-top">
+        <div class="result-box">
+          <div class="result-label">iRR6 Total Score</div>
+          <div class="result-score" id="r-score">—</div>
+          <div class="result-os-note" id="r-score-sub"></div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Risk Category</div>
+          <div class="result-risk" id="r-risk">—</div>
+          <div class="result-os-note" id="r-os"></div>
+        </div>
+      </div>
+
+      <div class="result-body">
+
+        <div class="surv-section">
+          <div class="surv-title">5-Year Overall Survival · RUX-MF Cohort (INT-1, n = 428) · p &lt;0.0001</div>
+          <div class="bar-row" id="brow-low">
+            <div class="bar-cat">Low (score = 0)</div>
+            <div class="bar-track"><div class="bar-fill low" data-w="84.8"></div></div>
+            <div class="bar-val">84.8%</div>
+          </div>
+          <div class="bar-row" id="brow-int">
+            <div class="bar-cat">Intermediate (1–2)</div>
+            <div class="bar-track"><div class="bar-fill intermediate" data-w="76.4"></div></div>
+            <div class="bar-val">76.4%</div>
+          </div>
+          <div class="bar-row" id="brow-high">
+            <div class="bar-cat">High (&gt;2)</div>
+            <div class="bar-track"><div class="bar-fill high" data-w="56.6"></div></div>
+            <div class="bar-val">56.6%</div>
+          </div>
+          <div class="val-note">
+            External validation — Moffitt Cancer Center (n = 95): Low 83.3% · Intermediate 71.7% · High 54.5% (p = 0.01). Model performance consistent across PMF and SMF subgroups (DIPSS and MYSEC-PM, respectively).
+          </div>
+        </div>
+
+        <div class="breakdown-section">
+          <div class="breakdown-title">Score Breakdown</div>
+          <table class="breakdown-table" id="breakdown-tbl"></table>
+        </div>
+
+        <div class="interp" id="interp"></div>
+
+        <button class="reset-btn" onclick="resetAll()">Reset Calculator</button>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Clinical Disclaimer.</strong> This tool is intended exclusively for qualified healthcare professionals as a decision-support aid. The iRR6 model was derived from retrospective multicenter data (RUX-MF; n = 428 INT-1 patients) and validated externally (Moffitt Cancer Center; n = 95). Molecular data were not systematically incorporated (NGS unavailable in a significant proportion of the original cohort). Spleen response was assessed by palpation; inter-observer variability is an acknowledged limitation. This calculator does not substitute clinical judgment, institutional protocols, or multidisciplinary discussion. Risk stratification should always be interpreted in the context of the individual patient's full clinical picture, comorbidities, performance status, and preferences regarding transplantation.
+  </div>
+
+  <footer>
+    <div class="footer-ref">
+      <strong>Reference:</strong> Palandri F, Branzanti F, Bonifacio M, Elli EM, Morsia E, Farina M, …, Duminuco A, …, Kuykendall AT. Revised "iRR6" model in intermediate-1 risk myelofibrosis patients treated with ruxolitinib. <em>Cancer.</em> 2025;e70062.
+      <br>doi:<a href="https://doi.org/10.1002/cncr.70062" target="_blank" style="color:inherit">10.1002/cncr.70062</a> · Open Access (CC BY) · RUX-MF Study NCT06516406
+    </div>
+    <div class="footer-tag">
+      iRR6 CALCULATOR<br>v1.1 · 2025<br>RUX-MF STUDY
+    </div>
+  </footer>
+
+</div><!-- /page -->
+
+<script>
+var S = { underdose: null, sr50: null, rbc: null };
+
+// ── Eligibility ──
+document.querySelectorAll('.elig-item').forEach(function(el) {
+  el.addEventListener('click', function() {
+    this.classList.toggle('checked');
+    var nChecked = document.querySelectorAll('.elig-item.checked').length;
+    var nTotal   = document.querySelectorAll('.elig-item').length;
+    var warn     = document.getElementById('elig-warn');
+    warn.style.display = (nChecked > 0 && nChecked < nTotal) ? 'block' : 'none';
+  });
+});
+
+// ── Variable toggles ──
+function setVar(v, val) {
+  S[v] = val;
+  if (v === 'underdose') {
+    document.getElementById('ud-no').className  = 't-btn' + (val ? '' : ' sel-no');
+    document.getElementById('ud-yes').className = 't-btn' + (val ? ' sel-yes' : '');
+    var tag = document.getElementById('ud-tag');
+    tag.textContent = val ? '+2 pts' : '+0 pts';
+    tag.className   = 'pts-tag' + (val ? ' on' : '');
+  } else {
+    document.getElementById('sr-no').className  = 't-btn' + (val ? '' : ' sel-no');
+    document.getElementById('sr-yes').className = 't-btn' + (val ? ' sel-yes' : '');
+    var tag = document.getElementById('sr-tag');
+    tag.textContent = val ? '+1.5 pts' : '+0 pts';
+    tag.className   = 'pts-tag' + (val ? ' on' : '');
+  }
+}
+
+function setRBCMain(val) {
+  document.getElementById('rbc-no').className  = 't-btn' + (val ? '' : ' sel-no');
+  document.getElementById('rbc-yes').className = 't-btn' + (val ? ' sel-yes' : '');
+  var sub = document.getElementById('rbc-sub');
+  if (!val) {
+    S.rbc = null;
+    sub.classList.remove('open');
+    var tag = document.getElementById('rbc-tag');
+    tag.textContent = '+0 pts';
+    tag.className = 'pts-tag';
+    document.querySelectorAll('.radio-opt').forEach(function(r){ r.classList.remove('sel'); });
+  } else {
+    sub.classList.add('open');
+    if (!S.rbc) { setRBCDetail('two'); }
+  }
+}
+
+function setRBCDetail(type) {
+  S.rbc = type;
+  document.getElementById('rbc-2tp').className = 'radio-opt' + (type === 'two' ? ' sel' : '');
+  document.getElementById('rbc-all').className  = 'radio-opt' + (type === 'all' ? ' sel' : '');
+  var pts = type === 'two' ? '1.0' : '1.5';
+  var tag = document.getElementById('rbc-tag');
+  tag.textContent = '+' + pts + ' pts';
+  tag.className = 'pts-tag on';
+}
+
+// ── Calculate ──
+function calculate() {
+  if (S.underdose === null || S.sr50 === null) {
+    alert('Please select a value for all score variables before calculating.');
+    return;
+  }
+
+  var score = 0;
+  var rows  = [];
+
+  // Underdosing
+  if (S.underdose) score += 2.0;
+  rows.push({ label: 'Ruxolitinib underdosed (PLT-adjusted, any time point)', pts: S.underdose ? 2.0 : 0, on: S.underdose });
+
+  // SR50
+  if (S.sr50) score += 1.5;
+  rows.push({ label: 'Spleen reduction <50% at 6 months (absent SR50)', pts: S.sr50 ? 1.5 : 0, on: S.sr50 });
+
+  // RBC
+  var rbcPts = 0, rbcLabel = 'No RBC transfusion requirement';
+  if (S.rbc === 'two') { rbcPts = 1.0; rbcLabel = 'RBC transfusion requirement at 2 time points'; }
+  if (S.rbc === 'all') { rbcPts = 1.5; rbcLabel = 'RBC transfusion requirement at all 3 time points'; }
+  score += rbcPts;
+  rows.push({ label: rbcLabel, pts: rbcPts, on: rbcPts > 0 });
+
+  // Category
+  var cat, catLabel, scoreSub, osNote, interpText;
+  if (score === 0) {
+    cat = 'low'; catLabel = 'Low Risk'; scoreSub = 'Score = 0';
+    osNote = '5-yr OS: 84.8% · Median OS: not reached';
+    interpText = '<strong>Low Risk (score = 0).</strong> This patient belongs to the low-risk iRR6 group, accounting for 20.3% of the INT-1 population in the RUX-MF cohort. Five-year OS was 84.8% (median OS not reached) in the training cohort, confirmed at 83.3% in the external Moffitt validation. Continuation of current ruxolitinib management with periodic reassessment of response parameters is appropriate. Allogeneic transplantation is generally not indicated unless disease progression or a change in DIPSS risk category occurs.';
+  } else if (score <= 2) {
+    cat = 'intermediate'; catLabel = 'Intermediate Risk'; scoreSub = 'Score 1–2';
+    osNote = '5-yr OS: 76.4% · Median OS: 9.24 years';
+    interpText = '<strong>Intermediate Risk (score 1–2).</strong> This patient belongs to the intermediate-risk iRR6 group, representing 45.8% of the INT-1 cohort. Five-year OS was 76.4% (median OS: 9.24 years) in the training cohort and 71.7% in the Moffitt external validation. Clinical reassessment is warranted: optimization of ruxolitinib dosing relative to platelet count, evaluation of contributing factors to suboptimal response, and consideration of alternative JAK inhibitors (momelotinib if anemia-dominant; fedratinib or pacritinib per clinical context) should be discussed. Referral for allogeneic transplant evaluation may be appropriate in eligible patients, particularly those on the higher end of this score range.';
+  } else {
+    cat = 'high'; catLabel = 'High Risk'; scoreSub = 'Score >2';
+    osNote = '5-yr OS: 56.6% · Median OS: 5.77 years';
+    interpText = '<strong>High Risk (score >2).</strong> This patient belongs to the high-risk iRR6 group, representing 33.9% of the INT-1 cohort. Five-year OS was 56.6% (median OS: 5.77 years) in the training cohort and 54.5% in the Moffitt validation. Early therapeutic intervention is strongly indicated. Prompt evaluation for allogeneic stem cell transplantation should be prioritized in transplant-eligible patients — delayed referral is associated with significantly worse post-transplant outcomes. In transplant-ineligible patients, switch to second-line JAK inhibition and/or clinical trial enrollment should be urgently discussed in a multidisciplinary setting.';
+  }
+
+  // Populate
+  document.getElementById('r-score').textContent = fmtScore(score);
+  document.getElementById('r-score-sub').textContent = scoreSub;
+  var riskEl = document.getElementById('r-risk');
+  riskEl.textContent = catLabel;
+  riskEl.className = 'result-risk ' + cat;
+  document.getElementById('r-os').textContent = osNote;
+  document.getElementById('result-card').className = 'result-card ' + cat;
+
+  // Bars
+  ['low','int','high'].forEach(function(c) {
+    var mapCat = c === 'int' ? 'intermediate' : c;
+    document.getElementById('brow-' + c).classList.toggle('active', cat === mapCat);
+  });
+  setTimeout(function() {
+    document.querySelectorAll('.bar-fill').forEach(function(f) {
+      f.style.width = f.dataset.w + '%';
+    });
+  }, 80);
+
+  // Breakdown table
+  var tbl = document.getElementById('breakdown-tbl');
+  tbl.innerHTML = '';
+  rows.forEach(function(r) {
+    var tr = document.createElement('tr');
+    if (r.on) tr.className = 'active-row';
+    tr.innerHTML = '<td>' + r.label + '</td><td class="pts-col">' + (r.on ? '+' + r.pts.toFixed(1) : '—') + '</td>';
+    tbl.appendChild(tr);
+  });
+  var totTr = document.createElement('tr');
+  totTr.className = 'total-row';
+  totTr.innerHTML = '<td>Total iRR6 Score</td><td class="pts-col">' + fmtScore(score) + '</td>';
+  tbl.appendChild(totTr);
+
+  // Interpretation
+  var interp = document.getElementById('interp');
+  interp.className = 'interp ' + cat;
+  interp.innerHTML = interpText;
+
+  // Show result
+  document.getElementById('result').className = 'show';
+  setTimeout(function() {
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 150);
+}
+
+function fmtScore(s) {
+  return s % 1 === 0 ? s.toString() : s.toFixed(1);
+}
+
+function resetAll() {
+  S.underdose = null; S.sr50 = null; S.rbc = null;
+
+  document.getElementById('ud-no').className  = 't-btn sel-no';
+  document.getElementById('ud-yes').className = 't-btn';
+  document.getElementById('sr-no').className  = 't-btn sel-no';
+  document.getElementById('sr-yes').className = 't-btn';
+  document.getElementById('rbc-no').className  = 't-btn sel-no';
+  document.getElementById('rbc-yes').className = 't-btn';
+
+  ['ud-tag','sr-tag','rbc-tag'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.textContent = '+0 pts';
+    el.className = 'pts-tag';
+  });
+
+  document.getElementById('rbc-sub').classList.remove('open');
+  document.querySelectorAll('.radio-opt').forEach(function(r){ r.classList.remove('sel'); });
+  document.querySelectorAll('.elig-item').forEach(function(el){ el.classList.remove('checked'); });
+  document.getElementById('elig-warn').style.display = 'none';
+
+  document.querySelectorAll('.bar-fill').forEach(function(f){ f.style.width = '0'; });
+  document.querySelectorAll('.bar-row').forEach(function(r){ r.classList.remove('active'); });
+
+  document.getElementById('result').className = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
